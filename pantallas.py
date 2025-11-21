@@ -22,6 +22,17 @@ import base64
 from generate_keys import firmar_datos
 from generate_keys import verificar_firma
 from cesar import recuperar_contrasena,cifrar_cesar 
+import os
+import sys
+
+def ruta_recurso(nombre_archivo):
+    """Devuelve la ruta absoluta de un recurso (imagen o DB)"""
+    import sys
+    import os
+    base_path = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_path, nombre_archivo)
+
+
 
 class Pantallas:
     
@@ -30,7 +41,7 @@ class Pantallas:
  destino_seleccionado = None
  precio_seleccionado = None
 
-
+ 
 
  def cambiar_pantalla(self, nombre_pantalla):
     """Cambia el contenido visible de la ventana."""
@@ -47,6 +58,8 @@ class Pantallas:
     else:
         # Redirige a la pantalla de reserva pasando el destino seleccionado
         app.cambiar_pantalla("reservar_vuelo", destino)  # Pasa el destino seleccionado a la pantalla de reserva
+
+
 
  def crear_pantalla_inicio(app):
     frame = tk.Frame(app.contenedor_pantallas, bg="#ADD8E6")  # Azul claro
@@ -67,7 +80,7 @@ class Pantallas:
     header_frame = tk.Frame(scrollable_frame, bg="#f8f9fa")
     header_frame.pack(fill="x", pady=0)
 
-    logo = PhotoImage(file="Aerotrip.png").subsample(6, 6)
+    logo = PhotoImage(file=ruta_recurso("imagenes/Aerotrip.png")).subsample(6, 6)
     logo_label = tk.Label(header_frame, image=logo, bg="#f8f9fa")
     logo_label.image = logo
     logo_label.pack(side="left", padx=20)
@@ -82,7 +95,7 @@ class Pantallas:
                         relief="flat", cursor="hand2", activeforeground="#0056b3")
         btn.pack(side="left", padx=10)
 
-    perfil_img = PhotoImage(file="Perfil.png").subsample(7, 7)
+    perfil_img = PhotoImage(file=ruta_recurso("imagenes/Perfil.png")).subsample(7, 7)
     btn_perfil = tk.Button(header_frame, image=perfil_img, bg="#f8f9fa",
                            command=lambda: app.cambiar_pantalla("login"), bd=0)
     btn_perfil.image = perfil_img
@@ -116,7 +129,7 @@ class Pantallas:
                                  highlightbackground="gray", highlightthickness=2)
         destino_frame.grid(row=fila, column=columna, padx=15, pady=15)
 
-        img_original = Image.open(destino["imagen"])
+        img_original = Image.open(ruta_recurso(f"imagenes/{destino['imagen']}"))
         img_resized = img_original.resize((200, 150))
         imagen_destino = ImageTk.PhotoImage(img_resized)
         imagenes_refs.append(imagen_destino)

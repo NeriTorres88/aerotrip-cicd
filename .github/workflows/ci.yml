@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI/CD Aerotrip
 
 on:
   push:
@@ -7,19 +7,42 @@ on:
     branches: [ main ]
 
 jobs:
-  build_and_test:
-    runs-on: ubuntu-latest
+  build-test-deploy:
+    runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.11
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.13
 
-    - name: Install dependencies
-      run: pip install -r requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller pytest pillow tk
 
-    - name: Run tests
-      run: pytest tests/
+      - name: Run tests
+        run: |
+          set PYTHONPATH=%CD%
+          pytest tests
+
+      - name: Build executable
+        run: |
+          pyinstaller --onefile main.py ^
+            --add-data "imagenes;imagenes" ^
+            --add-data "base_de_datos.db;." ^
+            --noconsole
+
+      - name: Deploy executable
+        run: |
+          mkdir release
+          copy dist\main.exe release\Aerotrip.exe
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: aerotrip-exe
+          path: release/Aerotrip.exe
