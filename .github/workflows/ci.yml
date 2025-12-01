@@ -16,7 +16,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.13
+          python-version: "3.12"
 
       - name: Install dependencies
         run: |
@@ -26,14 +26,13 @@ jobs:
 
       - name: Run tests
         run: |
-          set PYTHONPATH=%CD%
           pytest tests
 
       - name: Build executable
         run: |
-          pyinstaller --onefile main.py ^
-            --add-data "imagenes;imagenes" ^
-            --add-data "base_de_datos.db;." ^
+          pyinstaller --onefile main.py `
+            --add-data "imagenes;imagenes" `
+            --add-data "base_de_datos.db;." `
             --noconsole
 
       - name: Deploy executable
@@ -42,7 +41,7 @@ jobs:
           copy dist\main.exe release\Aerotrip.exe
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: aerotrip-exe
           path: release/Aerotrip.exe
