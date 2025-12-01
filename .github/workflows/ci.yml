@@ -25,7 +25,9 @@ jobs:
           pip install pyinstaller pytest pillow tk
 
       - name: Run tests
+        shell: cmd
         run: |
+          set PYTHONPATH=%CD%
           pytest tests
 
       - name: Build executable
