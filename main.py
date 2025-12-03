@@ -1,11 +1,43 @@
 import tkinter as tk
 from pantallas import Pantallas
 import sqlite3
-import base  
+import base 
+
+# --- INICIO DE CONFIGURACIÓN DE MONITOREO SENTRY (Punto 3) ---
+import sentry_sdk
+
+# IMPORTANTE: Reemplaza esta DSN con la DSN real de tu proyecto Sentry.
+# Esta DSN es la clave que vincula el código con tu plataforma de monitoreo.
+SENTRY_DSN = "https://f6213d6cf4b3604582ffed77cb4fd70b@o4510469598674944.ingest.us.sentry.io/4510469601099776" 
+
+def initialize_monitoring():
+    """
+    Inicializa el SDK de Sentry para el reporte automático de errores.
+    Se ejecuta al inicio de la aplicación para capturar todos los fallos.
+    """
+    if SENTRY_DSN == "https://f6213d6cf4b3604582ffed77cb4fd70b@o4510469598674944.ingest.us.sentry.io/4510469601099776":
+        print("ADVERTENCIA: DSN de Sentry no configurada. El monitoreo real de errores no se ejecutará.")
+        return
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        # Configuración para trazas de rendimiento (si se usa)
+        traces_sample_rate=1.0,  
+        # Define el entorno
+        environment="production", 
+        release="aerotrip@1.0.1" # Version del ejecutable del Producto 2
+    )
+    print("Monitoreo de Sentry inicializado.")
+# --- FIN DE CONFIGURACIÓN DE MONITOREO SENTRY ---
 
 
 class VentanaPrincipal(tk.Tk):
- def __init__(self):
+    def __init__(self):
+        # *** ESTE ES EL LUGAR DONDE SE AGREGA LA LLAMADA AL MONITOREO ***
+        initialize_monitoring() 
+        # Si ocurre un error en la línea de abajo o en cualquier lugar después,
+        # Sentry lo capturará (si la DSN es real).
+        
         super().__init__()
         self.title("Ventana Principal")
         self.geometry("1000x750")
@@ -28,7 +60,7 @@ class VentanaPrincipal(tk.Tk):
         # Mostrar pantalla inicial
         self.cambiar_pantalla("inicio")
 
- def crear_pantallas(self):
+    def crear_pantallas(self):
         """Inicializa las pantallas llamando las funciones desde pantallas.py"""
         self.pantallas["inicio"] = Pantallas.crear_pantalla_inicio(self)
         self.pantallas["nosotros"] = Pantallas.crear_pantalla_nosotros(self)
@@ -39,42 +71,42 @@ class VentanaPrincipal(tk.Tk):
         self.pantallas["registro"] = Pantallas.crear_pantalla_registro(self)
         self.pantallas["recuperar_contrasena"] = Pantallas.crear_pantalla_recuperar_contrasena(self)  # Agregar pantalla
         self.pantallas["reservar_vuelo"] = None  # Inicializa esta pantalla como None
-        self.pantallas["ticket_vuelo"] = None  # Inicializa la pantalla como None      
+        self.pantallas["ticket_vuelo"] = None  # Inicializa la pantalla como None     
         self.pantallas["mis_reservas"] = None  # Nueva pantalla de Mis Reservas 
         self.pantallas["mis_cupones"] = Pantallas.crear_pantalla_mis_cupones(self)
 
- def cambiar_pantalla(self, nombre_pantalla, destino_seleccionado=None, reserva_detalles=None,mostrar_guardar=True):
-    """Cambia el contenido visible de la ventana."""
-    
-    # Elimina el contenido de la pantalla anterior
-    if self.pantalla_actual:
-        self.pantalla_actual.pack_forget()
+    def cambiar_pantalla(self, nombre_pantalla, destino_seleccionado=None, reserva_detalles=None,mostrar_guardar=True):
+        """Cambia el contenido visible de la ventana."""
+        
+        # Elimina el contenido de la pantalla anterior
+        if self.pantalla_actual:
+            self.pantalla_actual.pack_forget()
 
-    # Verificar qué pantalla se está intentando cargar
-    if nombre_pantalla == "mis_cupones":
-        self.pantalla_actual = Pantallas.crear_pantalla_mis_cupones(self)
+        # Verificar qué pantalla se está intentando cargar
+        if nombre_pantalla == "mis_cupones":
+            self.pantalla_actual = Pantallas.crear_pantalla_mis_cupones(self)
 
-    elif nombre_pantalla == "reservar_vuelo" and destino_seleccionado:
-        self.pantalla_actual = Pantallas.crear_pantalla_reservar_vuelo(self, destino_seleccionado)
+        elif nombre_pantalla == "reservar_vuelo" and destino_seleccionado:
+            self.pantalla_actual = Pantallas.crear_pantalla_reservar_vuelo(self, destino_seleccionado)
 
-    elif nombre_pantalla == "ticket_vuelo" and reserva_detalles:
-        self.pantalla_actual = Pantallas.crear_pantalla_ticket_vuelo(self, reserva_detalles, mostrar_guardar)
+        elif nombre_pantalla == "ticket_vuelo" and reserva_detalles:
+            self.pantalla_actual = Pantallas.crear_pantalla_ticket_vuelo(self, reserva_detalles, mostrar_guardar)
 
-    elif nombre_pantalla == "mis_reservas":
-        self.pantalla_actual = Pantallas.crear_pantalla_mis_reservas(self)
+        elif nombre_pantalla == "mis_reservas":
+            self.pantalla_actual = Pantallas.crear_pantalla_mis_reservas(self)
 
-    else:
-        self.pantalla_actual = self.pantallas.get(nombre_pantalla)
+        else:
+            self.pantalla_actual = self.pantallas.get(nombre_pantalla)
 
-    if self.pantalla_actual:
-        # Actualizar el contenido de la pantalla
-        self.pantalla_actual.pack(fill="both", expand=True)
+        if self.pantalla_actual:
+            # Actualizar el contenido de la pantalla
+            self.pantalla_actual.pack(fill="both", expand=True)
 
- def crear_pie_pagina(self):
+    def crear_pie_pagina(self):
         """Crea el pie de página con enlaces y texto de copyright."""
         frame_footer = tk.Frame(self, bg="#f0f8ff")
         frame_footer.pack(side="bottom", fill="x", padx=20, pady=10)
-   
+        
         # Enlaces en el pie de página
         links_frame = tk.Frame(frame_footer, bg="#f0f8ff")
         links_frame.pack()
