@@ -5,38 +5,41 @@ import base
 
 # --- INICIO DE CONFIGURACIÓN DE MONITOREO SENTRY (Punto 3) ---
 import sentry_sdk
+# Importar funciones para añadir contexto útil a los errores
+from sentry_sdk import set_context, set_user 
 
-# IMPORTANTE: Reemplaza esta DSN con la DSN real de tu proyecto Sentry.
-# Esta DSN es la clave que vincula el código con tu plataforma de monitoreo.
+# IMPORTANTE: Esta es la DSN real para tu proyecto Sentry.
 SENTRY_DSN = "https://f6213d6cf4b3604582ffed77cb4fd70b@o4510469598674944.ingest.us.sentry.io/4510469601099776" 
 
 def initialize_monitoring():
     """
     Inicializa el SDK de Sentry para el reporte automático de errores.
-    Se ejecuta al inicio de la aplicación para capturar todos los fallos.
     """
-    if SENTRY_DSN == "https://f6213d6cf4b3604582ffed77cb4fd70b@o4510469598674944.ingest.us.sentry.io/4510469601099776":
-        print("ADVERTENCIA: DSN de Sentry no configurada. El monitoreo real de errores no se ejecutará.")
+    if "o4510469598674944" not in SENTRY_DSN:
+        print("ADVERTENCIA: DSN de Sentry no configurada correctamente. El monitoreo no se ejecutará.")
         return
 
     sentry_sdk.init(
         dsn=SENTRY_DSN,
-        # Configuración para trazas de rendimiento (si se usa)
+        # Configuración para trazas de rendimiento
         traces_sample_rate=1.0,  
         # Define el entorno
         environment="production", 
         release="aerotrip@1.0.1" # Version del ejecutable del Producto 2
     )
+    
+    # Añadiendo contexto útil para el diagnóstico
+    set_user({"id": "Aerotrip-User-Test", "email": "monitor@aerotrip.com"})
+    set_context("App Status", {"initial_load": "success"})
+    
     print("Monitoreo de Sentry inicializado.")
 # --- FIN DE CONFIGURACIÓN DE MONITOREO SENTRY ---
 
 
 class VentanaPrincipal(tk.Tk):
     def __init__(self):
-        # *** ESTE ES EL LUGAR DONDE SE AGREGA LA LLAMADA AL MONITOREO ***
+        # *** INICIALIZACIÓN DEL MONITOREO ***
         initialize_monitoring() 
-        # Si ocurre un error en la línea de abajo o en cualquier lugar después,
-        # Sentry lo capturará (si la DSN es real).
         
         super().__init__()
         self.title("Ventana Principal")
@@ -54,7 +57,7 @@ class VentanaPrincipal(tk.Tk):
         # Crear pantallas
         self.crear_pantallas()
 
-        # Crear pie de página
+        # Crear pie de página (Modificado para incluir el botón de prueba)
         self.crear_pie_pagina()
 
         # Mostrar pantalla inicial
@@ -102,14 +105,41 @@ class VentanaPrincipal(tk.Tk):
             # Actualizar el contenido de la pantalla
             self.pantalla_actual.pack(fill="both", expand=True)
 
+    def simulate_crash_for_sentry(self):
+        """
+        FUNCIÓN DE PRUEBA: Fuerza un error de división por cero (ZeroDivisionError)
+        para asegurar que Sentry captura el fallo y lo envía.
+        """
+        print("Activando error crítico para prueba de Sentry...")
+        # LÍNEA QUE CAUSA EL FALLO: Este es el error no controlado que Sentry debe capturar
+        result = 100 / 0 
+
     def crear_pie_pagina(self):
-        """Crea el pie de página con enlaces y texto de copyright."""
+        """Crea el pie de página con enlaces, copyright y el BOTÓN ROJO DE PRUEBA."""
         frame_footer = tk.Frame(self, bg="#f0f8ff")
         frame_footer.pack(side="bottom", fill="x", padx=20, pady=10)
         
         # Enlaces en el pie de página
         links_frame = tk.Frame(frame_footer, bg="#f0f8ff")
         links_frame.pack()
+        
+        # --- BOTÓN DE PRUEBA DE MONITOREO SENTRY ---
+        btn_test_sentry = tk.Button(
+            links_frame, 
+            text="TEST CRASH (Sentry)", 
+            command=self.simulate_crash_for_sentry, 
+            bg="red", 
+            fg="white", 
+            relief="raised", 
+            font=("Arial", 10, "bold"), 
+            cursor="hand2"
+        )
+        btn_test_sentry.pack(side="left", padx=10)
+        # ------------------------------------------
+
+        # Línea divisora vertical
+        separador = tk.Frame(links_frame, bg="gray", width=2, height=20)
+        separador.pack(side="left", padx=10)
 
         btn_aviso_privacidad = tk.Button(
             links_frame, text="Aviso de Privacidad", command=lambda: self.cambiar_pantalla("aviso_privacidad"), bg="#f0f8ff", fg="blue", relief="flat", font=("Arial", 10), cursor="hand2"
