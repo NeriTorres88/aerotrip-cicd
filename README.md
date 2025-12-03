@@ -1,188 +1,90 @@
-# aerotrip-cicd
+# 🚀 Aerotrip – Pipeline CI/CD con GitHub Actions
 
-# Aerotrip - Aplicación de Reservas de Vuelos
-
-Aerotrip es una aplicación de escritorio para reservar vuelos, gestionando destinos, usuarios y pagos. Incluye integración con base de datos SQLite y soporte para ejecución de pruebas automatizadas. También cuenta con scripts para generación del ejecutable `.exe` y despliegue automatizado mediante GitHub Actions.
+Este repositorio implementa un flujo completo de Integración Continua (CI) y Entrega Continua (CD) para la aplicación **Aerotrip**, cumpliendo con los requisitos de automatización, pruebas, construcción del ejecutable y despliegue mediante GitHub Actions.
 
 ---
 
-## Contenido del repositorio
+## ✅ 1. Scripts del flujo de trabajo (pipeline)
 
-```
-APP_AEROTRIP_NEW/
-│
-├─ main.py                    # Script principal de la aplicación
-├─ pantallas.py                # Módulos de interfaz (Tkinter)
-├─ base_de_datos.db            # Base de datos SQLite
-├─ imagenes/                   # Recursos de imágenes
-├─ requirements.txt            # Dependencias Python
-├─ tests/                      # Pruebas automatizadas con pytest
-│   └─ test_app.py
-├─ scripts/                    # Scripts para pipeline y despliegue
-│   ├─ setup_entorno.bat
-│   ├─ run_tests.bat
-│   ├─ build_exe.bat
-│   └─ deploy.bat
-└─ .github/workflows/          # Configuración de CI/CD
-    └─ ci_cd.yml
-```
+El repositorio incluye un pipeline automatizado ubicado en:
+
+.github/workflows/aerotrip-ci.yml
+
+yaml
+Copiar código
+
+Este script contiene:
+- Instalación del entorno base (Python)
+- Instalación de dependencias
+- Ejecución de pruebas automatizadas
+- Construcción del ejecutable con PyInstaller
+- Generación del entorno de liberación
+- Subida del artefacto final
 
 ---
 
-## Requisitos
+## ✅ 2. Scripts para la generación del entorno de liberación
 
-* Windows 10/11
-* Python 3.13
-* Dependencias del proyecto (se instalan con `requirements.txt`):
+El pipeline instala automáticamente todas las dependencias necesarias:
 
-  * `pytest`
-  * `pillow`
-  * `tk`
-  * `pyinstaller`
+```yaml
+pip install -r requirements.txt
+pip install pyinstaller pillow pytest tk
+Luego genera el ejecutable mediante:
 
----
+yaml
+Copiar código
+pyinstaller --onefile main.py --add-data "imagenes;imagenes" --add-data "base_de_datos.db;." --noconsole
+El archivo resultante se crea en:
 
-## Instalación y configuración del entorno
+bash
+Copiar código
+dist/main.exe
+✅ 3. Scripts de pruebas en el entorno de liberación
+Las pruebas automatizadas se encuentran en:
 
-1. Clonar el repositorio:
+bash
+Copiar código
+tests/test_app.py
+El pipeline ejecuta:
 
-```bash
-git clone https://github.com/TU_USUARIO/Aerotrip.git
-cd Aerotrip
-```
+yaml
+Copiar código
+pytest tests
+Estas pruebas garantizan el correcto funcionamiento de la aplicación antes de generar el ejecutable final.
 
-2. Crear y activar el entorno virtual, e instalar dependencias:
+✅ 4. Scripts para la generación del despliegue
+El pipeline genera automáticamente el entorno de despliegue:
 
-```bat
-scripts\setup_entorno.bat
-```
+yaml
+Copiar código
+mkdir release
+copy dist\main.exe release\Aerotrip.exe
+Finalmente, el ejecutable se publica como artefacto descargable mediante:
 
----
+yaml
+Copiar código
+uses: actions/upload-artifact@v4
+with:
+  name: aerotrip-exe
+  path: release/Aerotrip.exe
+Puedes descargar el .exe desde:
 
-## Ejecución de la aplicación
+Actions → Artifacts → aerotrip-exe
 
-Dentro del entorno virtual:
+🏁 Resultado final del pipeline
+Cada vez que se hace un push o pull request a la rama main, el pipeline:
 
-```bat
-call venv\Scripts\activate.bat
-python main.py
-```
+Configura el entorno
 
----
+Instala dependencias
 
-## Ejecución de pruebas automatizadas
+Corre pruebas unitarias
 
-Para correr los tests:
+Construye el ejecutable
 
-```bat
-scripts\run_tests.bat
-```
+Genera la carpeta de liberación
 
-Se ejecutarán todos los archivos de pruebas dentro de la carpeta `tests/` usando `pytest`.
+Publica el ejecutable como artefacto
 
----
-
-## Generación del ejecutable (.exe)
-
-Para crear el ejecutable independiente con PyInstaller:
-
-```bat
-scripts\build_exe.bat
-```
-
-* El ejecutable se generará en la carpeta `dist/`.
-* Todos los recursos (imágenes y base de datos) se empaquetan automáticamente.
-
----
-
-## Despliegue
-
-Para generar un despliegue local del ejecutable:
-
-```bat
-scripts\deploy.bat
-```
-
-* Esto copiará el `.exe` a la carpeta `release/` para distribución.
-
----
-
-## CI/CD con GitHub Actions
-
-Se ha configurado un pipeline de GitHub Actions que realiza:
-
-1. Instalación del entorno y dependencias.
-2. Ejecución de pruebas automatizadas.
-3. Generación del ejecutable `.exe`.
-4. Copia del `.exe` a la carpeta `release/`.
-5. Subida del ejecutable como artefacto de la acción.
-
-Archivo de workflow: `.github/workflows/ci_cd.yml`
-
----
-
-## Flujo de Trabajo (Pipeline)
-
-1. **Desarrollo**: Implementación de nuevas funcionalidades y corrección de errores.
-2. **Pruebas**: Ejecución de pruebas unitarias automatizadas (`pytest`).
-3. **Build/Compilación**: Generación del `.exe` con PyInstaller.
-4. **Despliegue**: Copia de archivos al entorno de liberación y distribución.
-5. **Entrega/Producción**: Disponibilidad del ejecutable para los usuarios finales.
-
----
-
-## Niveles de Servicio (SLA)
-
-* Disponibilidad de la aplicación: 99%
-* Tiempo máximo de ejecución de pruebas: < 1 minuto
-* Tiempo de generación del ejecutable: < 2 minutos
-
----
-
-## Métricas para Monitoreo
-
-* Número de reservas realizadas
-* Tiempo de ejecución de la aplicación
-* Errores en la base de datos
-* Logs de fallos durante la generación del ejecutable
-* Estado de las pruebas unitarias
-
----
-
-## Parámetros de Configuración de Herramientas
-
-* **PyInstaller**:
-
-  ```bash
-  pyinstaller --onefile --add-data "imagenes;imagenes" main.py
-  ```
-* **pytest**:
-
-  ```bash
-  pytest tests/
-  ```
-* Variables de entorno necesarias:
-
-  ```text
-  PYTHONPATH=.
-  ```
-
----
-
-## Uso del artefacto generado
-
-* Una vez finalizado el workflow en GitHub Actions, el archivo `Aerotrip.exe` estará disponible para descargar desde los **artefactos** del pipeline.
-* Se puede ejecutar directamente en Windows sin necesidad de Python instalado.
-
----
-
-## Notas adicionales
-
-* Las imágenes se encuentran en la carpeta `imagenes/` y deben estar accesibles al ejecutar el `.exe`.
-* La base de datos SQLite se encuentra en `base_de_datos.db` y se empaqueta dentro del ejecutable.
-
----
-
-## Autor
-
-* Neri Torres
+Garantizando un flujo CI/CD profesional, reproducible y confiable.

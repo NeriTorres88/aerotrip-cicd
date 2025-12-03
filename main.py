@@ -1,11 +1,46 @@
 import tkinter as tk
 from pantallas import Pantallas
 import sqlite3
-import base  
+import base 
+
+# --- INICIO DE CONFIGURACIÓN DE MONITOREO SENTRY (Punto 3) ---
+import sentry_sdk
+# Importar funciones para añadir contexto útil a los errores
+from sentry_sdk import set_context, set_user 
+
+# IMPORTANTE: Esta es la DSN real para tu proyecto Sentry.
+SENTRY_DSN = "https://f6213d6cf4b3604582ffed77cb4fd70b@o4510469598674944.ingest.us.sentry.io/4510469601099776" 
+
+def initialize_monitoring():
+    """
+    Inicializa el SDK de Sentry para el reporte automático de errores.
+    """
+    if "o4510469598674944" not in SENTRY_DSN:
+        print("ADVERTENCIA: DSN de Sentry no configurada correctamente. El monitoreo no se ejecutará.")
+        return
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        # Configuración para trazas de rendimiento
+        traces_sample_rate=1.0,  
+        # Define el entorno
+        environment="production", 
+        release="aerotrip@1.0.1" # Version del ejecutable del Producto 2
+    )
+    
+    # Añadiendo contexto útil para el diagnóstico
+    set_user({"id": "Aerotrip-User-Test", "email": "monitor@aerotrip.com"})
+    set_context("App Status", {"initial_load": "success"})
+    
+    print("Monitoreo de Sentry inicializado.")
+# --- FIN DE CONFIGURACIÓN DE MONITOREO SENTRY ---
 
 
 class VentanaPrincipal(tk.Tk):
- def __init__(self):
+    def __init__(self):
+        # *** INICIALIZACIÓN DEL MONITOREO ***
+        initialize_monitoring() 
+        
         super().__init__()
         self.title("Ventana Principal")
         self.geometry("1000x750")
@@ -22,13 +57,13 @@ class VentanaPrincipal(tk.Tk):
         # Crear pantallas
         self.crear_pantallas()
 
-        # Crear pie de página
+        # Crear pie de página (Modificado para incluir el botón de prueba)
         self.crear_pie_pagina()
 
         # Mostrar pantalla inicial
         self.cambiar_pantalla("inicio")
 
- def crear_pantallas(self):
+    def crear_pantallas(self):
         """Inicializa las pantallas llamando las funciones desde pantallas.py"""
         self.pantallas["inicio"] = Pantallas.crear_pantalla_inicio(self)
         self.pantallas["nosotros"] = Pantallas.crear_pantalla_nosotros(self)
@@ -39,45 +74,72 @@ class VentanaPrincipal(tk.Tk):
         self.pantallas["registro"] = Pantallas.crear_pantalla_registro(self)
         self.pantallas["recuperar_contrasena"] = Pantallas.crear_pantalla_recuperar_contrasena(self)  # Agregar pantalla
         self.pantallas["reservar_vuelo"] = None  # Inicializa esta pantalla como None
-        self.pantallas["ticket_vuelo"] = None  # Inicializa la pantalla como None      
+        self.pantallas["ticket_vuelo"] = None  # Inicializa la pantalla como None     
         self.pantallas["mis_reservas"] = None  # Nueva pantalla de Mis Reservas 
         self.pantallas["mis_cupones"] = Pantallas.crear_pantalla_mis_cupones(self)
 
- def cambiar_pantalla(self, nombre_pantalla, destino_seleccionado=None, reserva_detalles=None,mostrar_guardar=True):
-    """Cambia el contenido visible de la ventana."""
-    
-    # Elimina el contenido de la pantalla anterior
-    if self.pantalla_actual:
-        self.pantalla_actual.pack_forget()
+    def cambiar_pantalla(self, nombre_pantalla, destino_seleccionado=None, reserva_detalles=None,mostrar_guardar=True):
+        """Cambia el contenido visible de la ventana."""
+        
+        # Elimina el contenido de la pantalla anterior
+        if self.pantalla_actual:
+            self.pantalla_actual.pack_forget()
 
-    # Verificar qué pantalla se está intentando cargar
-    if nombre_pantalla == "mis_cupones":
-        self.pantalla_actual = Pantallas.crear_pantalla_mis_cupones(self)
+        # Verificar qué pantalla se está intentando cargar
+        if nombre_pantalla == "mis_cupones":
+            self.pantalla_actual = Pantallas.crear_pantalla_mis_cupones(self)
 
-    elif nombre_pantalla == "reservar_vuelo" and destino_seleccionado:
-        self.pantalla_actual = Pantallas.crear_pantalla_reservar_vuelo(self, destino_seleccionado)
+        elif nombre_pantalla == "reservar_vuelo" and destino_seleccionado:
+            self.pantalla_actual = Pantallas.crear_pantalla_reservar_vuelo(self, destino_seleccionado)
 
-    elif nombre_pantalla == "ticket_vuelo" and reserva_detalles:
-        self.pantalla_actual = Pantallas.crear_pantalla_ticket_vuelo(self, reserva_detalles, mostrar_guardar)
+        elif nombre_pantalla == "ticket_vuelo" and reserva_detalles:
+            self.pantalla_actual = Pantallas.crear_pantalla_ticket_vuelo(self, reserva_detalles, mostrar_guardar)
 
-    elif nombre_pantalla == "mis_reservas":
-        self.pantalla_actual = Pantallas.crear_pantalla_mis_reservas(self)
+        elif nombre_pantalla == "mis_reservas":
+            self.pantalla_actual = Pantallas.crear_pantalla_mis_reservas(self)
 
-    else:
-        self.pantalla_actual = self.pantallas.get(nombre_pantalla)
+        else:
+            self.pantalla_actual = self.pantallas.get(nombre_pantalla)
 
-    if self.pantalla_actual:
-        # Actualizar el contenido de la pantalla
-        self.pantalla_actual.pack(fill="both", expand=True)
+        if self.pantalla_actual:
+            # Actualizar el contenido de la pantalla
+            self.pantalla_actual.pack(fill="both", expand=True)
 
- def crear_pie_pagina(self):
-        """Crea el pie de página con enlaces y texto de copyright."""
+    def simulate_crash_for_sentry(self):
+        """
+        FUNCIÓN DE PRUEBA: Fuerza un error de división por cero (ZeroDivisionError)
+        para asegurar que Sentry captura el fallo y lo envía.
+        """
+        print("Activando error crítico para prueba de Sentry...")
+        # LÍNEA QUE CAUSA EL FALLO: Este es el error no controlado que Sentry debe capturar
+        result = 100 / 0 
+
+    def crear_pie_pagina(self):
+        """Crea el pie de página con enlaces, copyright y el BOTÓN ROJO DE PRUEBA."""
         frame_footer = tk.Frame(self, bg="#f0f8ff")
         frame_footer.pack(side="bottom", fill="x", padx=20, pady=10)
-   
+        
         # Enlaces en el pie de página
         links_frame = tk.Frame(frame_footer, bg="#f0f8ff")
         links_frame.pack()
+        
+        # --- BOTÓN DE PRUEBA DE MONITOREO SENTRY ---
+        btn_test_sentry = tk.Button(
+            links_frame, 
+            text="TEST CRASH (Sentry)", 
+            command=self.simulate_crash_for_sentry, 
+            bg="red", 
+            fg="white", 
+            relief="raised", 
+            font=("Arial", 10, "bold"), 
+            cursor="hand2"
+        )
+        btn_test_sentry.pack(side="left", padx=10)
+        # ------------------------------------------
+
+        # Línea divisora vertical
+        separador = tk.Frame(links_frame, bg="gray", width=2, height=20)
+        separador.pack(side="left", padx=10)
 
         btn_aviso_privacidad = tk.Button(
             links_frame, text="Aviso de Privacidad", command=lambda: self.cambiar_pantalla("aviso_privacidad"), bg="#f0f8ff", fg="blue", relief="flat", font=("Arial", 10), cursor="hand2"
